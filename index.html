@@ -90,7 +90,26 @@ function makeFighter(color,x,z,isPlayer=false){
   const leg=new THREE.Mesh(new THREE.BoxGeometry(.25,.58,.28),dark);leg.position.y=-.29;legPivot.add(leg);limbs.push({mesh:legPivot,phase:s===-1?0:Math.PI,kind:"leg"});
  }
  const gun=boxIn(g,.12,1.15,.48,.16,.18,.85,dark);
- return {group:g,gun,body,headPivot,limbs,hp:100,alive:true,isPlayer,lastAttack:0,walk:Math.random()*6,knockback:new THREE.Vector3(),hitFlash:0};
+ const fighter={group:g,gun,body,headPivot,limbs,hp:100,alive:true,isPlayer,lastAttack:0,walk:Math.random()*6,knockback:new THREE.Vector3(),hitFlash:0};
+ if(!isPlayer){
+  const hitbox=new THREE.Mesh(new THREE.BoxGeometry(1.25,2.25,.9),new THREE.MeshBasicMaterial({transparent:true,opacity:0,depthWrite:false}));
+  hitbox.position.set(0,1.2,0);hitbox.userData.bot=fighter;g.add(hitbox);fighter.hitbox=hitbox;
+  const canvas=document.createElement('canvas');canvas.width=128;canvas.height=18;
+  const ctx=canvas.getContext('2d');ctx.fillStyle='#291f1c';ctx.fillRect(0,0,128,18);ctx.fillStyle='#e6534d';ctx.fillRect(2,2,124,14);
+  const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+  const bar=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:true}));
+  bar.position.set(0,2.55,0);bar.scale.set(1.05,.15,1);g.add(bar);fighter.healthBar=bar;fighter.healthCanvas=canvas;fighter.healthContext=ctx;fighter.healthTexture=texture;
+  updateEnemyHealthBar(fighter);
+ }
+ return fighter;
+}
+function updateEnemyHealthBar(bot){
+ if(!bot.healthContext)return;
+ const ctx=bot.healthContext,ratio=THREE.MathUtils.clamp(bot.hp/100,0,1);
+ ctx.clearRect(0,0,128,18);ctx.fillStyle='#211b1a';ctx.fillRect(0,0,128,18);
+ ctx.fillStyle='#6f2927';ctx.fillRect(2,2,124,14);
+ ctx.fillStyle=ratio>.5?'#78d18b':ratio>.25?'#f0b64d':'#f06458';ctx.fillRect(2,2,124*ratio,14);
+ bot.healthTexture.needsUpdate=true;
 }
 function boxIn(parent,x,y,z,w,h,d,material){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);parent.add(m);return m}
 const player=makeFighter(blue,0,12,true);player.group.scale.setScalar(1.08);
@@ -125,18 +144,19 @@ function shoot(){
  lastShot=performance.now();ammo--;updateHud();recoil=.28;
  raycaster.setFromCamera(pointer,camera);const ground=new THREE.Plane(new THREE.Vector3(0,1,0),0),aim=new THREE.Vector3();raycaster.ray.intersectPlane(ground,aim);
  const origin=player.group.position.clone().add(new THREE.Vector3(0,1.18,0)),direction=aim.clone().sub(origin).normalize();
- const targets=[];for(const b of bots)if(b.alive)targets.push(b.body,...b.headPivot.children);
+ const targets=bots.filter(b=>b.alive&&b.hitbox).map(b=>b.hitbox);
+ const blockers=scene.children.filter(o=>o.isMesh&&o.geometry.type==="BoxGeometry"&&o.position.y>.3);
  raycaster.set(origin,direction);raycaster.far=34;
- const hit=raycaster.intersectObjects([...targets,...scene.children.filter(o=>o.isMesh&&o.geometry.type==="BoxGeometry"&&o.position.y>.3)],false);
+ const hit=raycaster.intersectObjects([...targets,...blockers],true);
  const end=hit.length?hit[0].point:origin.clone().add(direction.clone().multiplyScalar(34));spawnShot(origin,end);
  if(hit.length){
-  const target=bots.find(b=>b.alive&&(hit[0].object===b.body||b.headPivot.children.includes(hit[0].object)));
-  if(target){target.hp-=50;target.knockback.add(direction.clone().multiplyScalar(4.5));target.hitFlash=.13;say(target.hp<=0?"CIBLE ÉLIMINÉE +1":"TOUCHÉ !");
-   if(target.hp<=0){target.alive=false;score++;updateHud();target.group.rotation.z=.35;setTimeout(()=>{scene.remove(target.group);respawn(target)},1800)}
+  const target=hit[0].object.userData.bot||null;
+  if(target&&target.alive){target.hp=Math.max(0,target.hp-50);updateEnemyHealthBar(target);target.knockback.add(direction.clone().multiplyScalar(4.5));target.hitFlash=.13;say(target.hp<=0?"CIBLE ÉLIMINÉE +1":`TOUCHÉ ! ${target.hp}%`);
+   if(target.hp<=0){target.alive=false;if(target.healthBar)target.healthBar.visible=false;score++;updateHud();target.group.rotation.z=.35;setTimeout(()=>{scene.remove(target.group);respawn(target)},1800)}
   }else say("IMPACT CARTON");
  }else say("TIR !");
 }
-function respawn(bot){const x=(Math.random()-.5)*30,z=(Math.random()-.5)*30;if(Math.hypot(x-player.group.position.x,z-player.group.position.z)<9){respawn(bot);return}bot.hp=100;bot.alive=true;bot.group.position.set(x,0,z);bot.group.rotation.set(0,0,0);bot.group.scale.set(1,1,1);bot.knockback.set(0,0,0);scene.add(bot.group)}
+function respawn(bot){bot.hp=100;updateEnemyHealthBar(bot);if(bot.healthBar)bot.healthBar.visible=true;const x=(Math.random()-.5)*30,z=(Math.random()-.5)*30;if(Math.hypot(x-player.group.position.x,z-player.group.position.z)<9){respawn(bot);return}bot.alive=true;bot.group.position.set(x,0,z);bot.group.rotation.set(0,0,0);bot.group.scale.set(1,1,1);bot.knockback.set(0,0,0);scene.add(bot.group)}
 function onPointer(e){pointer.x=e.clientX/innerWidth*2-1;pointer.y=-(e.clientY/innerHeight)*2+1}
 addEventListener('pointermove',onPointer);addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='r')reloadGun()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 addEventListener('keydown',e=>{if(e.key==='Escape'&&active){active=false;paused=true;document.querySelector('.modal h1').innerHTML='PAUSE<br><span>TACTIQUE</span>';document.querySelector('.modal p').textContent='La partie est en pause. Reprends quand tu es prêt.';document.querySelector('#start').textContent='REPRENDRE LA PARTIE';document.querySelector('#overlay').style.display='grid';}});
