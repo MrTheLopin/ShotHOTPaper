@@ -82,7 +82,7 @@ function makeFighter(color,x,z,isPlayer=false){
  const visor=new THREE.Mesh(new THREE.BoxGeometry(.4,.09,.04),dark);visor.position.set(0,1.82,.29);g.add(visor);
  const armGeo=new THREE.BoxGeometry(.2,.78,.22);
  for(const s of [-1,1]){const a=new THREE.Mesh(armGeo,color);a.position.set(s*.49,.95,.02);a.rotation.z=s*.12;g.add(a);const leg=new THREE.Mesh(new THREE.BoxGeometry(.25,.58,.28),dark);leg.position.set(s*.2,.29,0);g.add(leg)}
- const gun=boxIn(g,.12,1.15,.48,.16,.18,.85,dark);return {group:g,gun,hp:100,alive:true,isPlayer};
+ const gun=boxIn(g,.12,1.15,.48,.16,.18,.85,dark);return {group:g,gun,hp:100,alive:true,isPlayer,lastAttack:0};
 }
 function boxIn(parent,x,y,z,w,h,d,material){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);parent.add(m);return m}
 const player=makeFighter(blue,0,12,true);player.group.scale.setScalar(1.08);
