@@ -14,7 +14,7 @@
 .brand,.panel{background:rgba(19,23,27,.78);border:1px solid rgba(255,255,255,.13);backdrop-filter:blur(12px);box-shadow:0 12px 35px #0005}
 .brand{padding:12px 16px;border-radius:12px}.brand strong{display:block;letter-spacing:.16em;font-size:13px}.brand span{font-size:10px;color:var(--muted);letter-spacing:.22em}
 .stats{display:flex;gap:9px}.stat{min-width:90px;padding:10px 13px;border-radius:10px;text-align:right}.stat small{display:block;color:var(--muted);font-size:9px;letter-spacing:.16em}.stat b{font-size:20px}
-.bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}.health{width:220px;padding:12px 14px;border-radius:11px}.health label{font-size:10px;color:var(--muted);letter-spacing:.18em}.bar{height:7px;background:#ffffff20;border-radius:8px;margin-top:8px;overflow:hidden}.bar i{display:block;width:100%;height:100%;background:linear-gradient(90deg,#70c58d,#c8df87);transition:width .2s}
+.bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}.health{width:220px;padding:12px 14px;border-radius:11px}.ammoPanel{width:190px;padding:12px 14px;border-radius:11px}.ammoPanel label{font-size:10px;color:var(--muted);letter-spacing:.18em}.ammoSlots{display:flex;gap:4px;margin-top:9px}.ammoSlots i{height:8px;flex:1;border-radius:2px;background:#ffad61;box-shadow:0 0 8px #ff8a3d55}.ammoSlots i.empty{background:#ffffff20;box-shadow:none}.health label{font-size:10px;color:var(--muted);letter-spacing:.18em}.bar{height:7px;background:#ffffff20;border-radius:8px;margin-top:8px;overflow:hidden}.bar i{display:block;width:100%;height:100%;background:linear-gradient(90deg,#70c58d,#c8df87);transition:width .2s}
 .hint{padding:10px 13px;border-radius:10px;color:var(--muted);font-size:11px}.hint kbd{color:var(--ink);background:#ffffff16;border:1px solid #ffffff24;border-radius:4px;padding:2px 5px}
 #toast{position:fixed;top:22%;left:50%;transform:translate(-50%,-10px);opacity:0;color:#fff;background:#20272ddd;border:1px solid #ffffff25;padding:10px 18px;border-radius:9px;transition:.2s;pointer-events:none;font-size:12px;letter-spacing:.12em}#toast.show{opacity:1;transform:translate(-50%,0)}
 #overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(120deg,#111820dd,#171b20bb);padding:20px}
@@ -29,14 +29,14 @@ button{border:0;border-radius:9px;padding:14px 20px;background:var(--orange);col
 <div id="game"></div>
 <div class="hud">
  <div class="top">
-  <div class="brand"><strong>SHOT<span style="color:#ff8a3d">HOT</span>PAPER</strong><span>TEST ARENA // BUILD 0.1</span></div>
+  <div class="brand"><strong>SHOT<span style="color:#ff8a3d">HOT</span>PAPER</strong><span>TEST ARENA // BUILD 0.2</span></div>
   <div class="stats">
    <div class="panel stat"><small>ÉLIMINATIONS</small><b id="score">00</b></div>
-   <div class="panel stat"><small>MUNITIONS</small><b id="ammo">12 / ∞</b></div>
+   <div class="panel stat"><small>MUNITIONS</small><b id="ammo">12 / 12</b></div>
   </div>
  </div>
  <div class="bottom">
-  <div class="panel health"><label>INTÉGRITÉ DU PAPIER <b id="hpText" style="float:right;color:#f4ead7">100%</b></label><div class="bar"><i id="hpBar"></i></div></div>
+  <div class="panel health"><label>INTÉGRITÉ DU PAPIER <b id="hpText" style="float:right;color:#f4ead7">100%</b></label><div class="bar"><i id="hpBar"></i></div></div><div class="panel ammoPanel"><label>CHARGEUR <b id="ammoText" style="float:right;color:#f4ead7">12 / 12</b></label><div class="ammoSlots" id="ammoSlots"></div></div>
   <div class="panel hint"><kbd>ZQSD</kbd> / <kbd>WASD</kbd> bouger &nbsp; <kbd>CLIC</kbd> tirer &nbsp; <kbd>R</kbd> recharger</div>
  </div>
 </div>
@@ -70,7 +70,7 @@ const floorMat=mat(0xb8a98c),ink=mat(0x45413b),paper=mat(0xe9dfc9),blue=mat(0x4f
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(44,44),floorMat);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
 const grid=new THREE.GridHelper(44,44,0x786e5d,0x9b8f79);grid.position.y=.012;scene.add(grid);
 function box(x,y,z,w,h,d,material,rot=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.rotation.y=rot;m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
-function makeCover(x,z,w,d,h){box(x,h/2,z,w,h,d,mat(0x987b56),Math.random()*.04);for(let i=-1;i<=1;i++)box(x+i*w*.27,h+.012,z,w*.035,.025,d+.02,tape)}
+const obstacles=[];\nfunction makeCover(x,z,w,d,h){box(x,h/2,z,w,h,d,mat(0x987b56),Math.random()*.04);obstacles.push({x,z,w,d,h});for(let i=-1;i<=1;i++)box(x+i*w*.27,h+.012,z,w*.035,.025,d+.02,tape)}
 // arena borders
 for(let i=-22;i<=22;i+=4){box(i,1,-22,3.8,2,.45,mat(0x8d7658));box(i,1,22,3.8,2,.45,mat(0x8d7658));box(-22,1,i,.45,2,3.8,mat(0x8d7658));box(22,1,i,.45,2,3.8,mat(0x8d7658))}
 makeCover(-7,-5,4,1.1,1.5);makeCover(6,-7,1.2,4,1.6);makeCover(-9,7,1.2,4,1.5);makeCover(8,7,4,1.2,1.4);makeCover(0,-11,5,1,1.1);makeCover(0,8,4,1,1.2);makeCover(12,0,1,4,1.3);makeCover(-13,-1,1,4,1.3);
@@ -87,15 +87,15 @@ function makeFighter(color,x,z,isPlayer=false){
 function boxIn(parent,x,y,z,w,h,d,material){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);parent.add(m);return m}
 const player=makeFighter(blue,0,12,true);player.group.scale.setScalar(1.08);
 const bots=[];const spots=[[-11,-10],[10,-12],[13,10],[-13,12],[2,-15],[-3,3],[14,-3]];
-for(const [x,z] of spots)bots.push(makeFighter(red,x,z));
-const keys={};let active=false,hp=100,score=0,ammo=12,reload=false,lastShot=0,damageClock=0;
+for(const [x,z] of spots){const b=makeFighter(red,x,z);b.knockback=new THREE.Vector3();b.hitFlash=0;bots.push(b)}
+const keys={};let active=false,hp=100,score=0,ammo=12,reload=false,lastShot=0,damageClock=0;const playerVelocity=new THREE.Vector3();let recoil=0;
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),clock=new THREE.Clock();
 const toast=document.querySelector('#toast');let toastTimer;
 function say(t){toast.textContent=t;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),1100)}
 function updateHud(){document.querySelector('#score').textContent=String(score).padStart(2,'0');document.querySelector('#ammo').textContent=ammo+' / ∞';document.querySelector('#hpText').textContent=hp+'%';document.querySelector('#hpBar').style.width=hp+'%'}
 function reloadGun(){if(reload||ammo===12)return;reload=true;say('RECHARGEMENT…');setTimeout(()=>{ammo=12;reload=false;updateHud()},850)}
 function shoot(){if(!active||reload||performance.now()-lastShot<230)return;if(ammo<=0){reloadGun();return}lastShot=performance.now();ammo--;updateHud();raycaster.setFromCamera(pointer,camera);const candidates=[];for(const b of bots)if(b.alive)candidates.push(b.group.children[0],b.group.children[1]);const hits=raycaster.intersectObjects(candidates,false);if(hits.length){const bot=bots.find(b=>b.group.children.includes(hits[0].object));if(bot){bot.hp-=50;bot.group.scale.set(.92,1,.92);setTimeout(()=>{if(bot.alive)bot.group.scale.set(1,1,1)},90);if(bot.hp<=0){bot.alive=false;scene.remove(bot.group);score++;updateHud();say('CIBLE ÉLIMINÉE +1');setTimeout(()=>respawn(bot),1800)}else say('TOUCHÉ !')}}else say('TIR !')}
-function respawn(bot){const x=(Math.random()-.5)*30,z=(Math.random()-.5)*30;if(Math.hypot(x-player.group.position.x,z-player.group.position.z)<9){respawn(bot);return}bot.hp=100;bot.alive=true;bot.group.position.set(x,0,z);scene.add(bot.group)}
+function respawn(bot){const x=(Math.random()-.5)*30,z=(Math.random()-.5)*30;if(Math.hypot(x-player.group.position.x,z-player.group.position.z)<9){respawn(bot);return}bot.hp=100;bot.alive=true;bot.group.position.set(x,0,z);bot.group.rotation.set(0,0,0);bot.group.scale.set(1,1,1);bot.knockback.set(0,0,0);scene.add(bot.group)}
 function onPointer(e){pointer.x=e.clientX/innerWidth*2-1;pointer.y=-(e.clientY/innerHeight)*2+1}
 addEventListener('pointermove',onPointer);addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='r')reloadGun()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 renderer.domElement.addEventListener('pointerdown',e=>{if(e.button===0)shoot()});
@@ -109,7 +109,7 @@ function update(dt){
   raycaster.setFromCamera(pointer,camera);const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0),target=new THREE.Vector3();if(raycaster.ray.intersectPlane(plane,target))player.group.rotation.y=Math.atan2(target.x-p.x,target.z-p.z);
   for(const b of bots)if(b.alive){const v=b.group.position,dist=Math.hypot(p.x-v.x,p.z-v.z);if(dist<12){const a=Math.atan2(p.x-v.x,p.z-v.z);b.group.rotation.y=a;if(dist>4){v.x+=Math.sin(a)*1.1*dt;v.z+=Math.cos(a)*1.1*dt}if(dist<8&&performance.now()-b.lastAttack>1800){b.lastAttack=performance.now();if(Math.random()>.35){hp=Math.max(0,hp-8);updateHud();say('IMPACT ! -8%');if(hp===0){active=false;document.querySelector('#overlay').style.display='grid';document.querySelector('.modal h1').innerHTML='FEUILLE<br><span>FROISSÉE</span>';document.querySelector('.modal p').textContent='La partie est terminée. Relance une partie pour retenter ta chance.';document.querySelector('#start').textContent='RECOMMENCER';document.querySelector('#start').onclick=()=>location.reload()}}}}}
  }
- const p=player.group.position;camera.position.x=THREE.MathUtils.lerp(camera.position.x,p.x*.45,.04);camera.position.z=THREE.MathUtils.lerp(camera.position.z,p.z+17,.04);camera.lookAt(p.x,0,p.z);
+ const p=player.group.position;camera.position.x=THREE.MathUtils.lerp(camera.position.x,p.x*.45,.045);camera.position.z=THREE.MathUtils.lerp(camera.position.z,p.z+17,.045);camera.lookAt(p.x,0,p.z);
 }
 function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);update(dt);renderer.render(scene,camera)}
 animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
