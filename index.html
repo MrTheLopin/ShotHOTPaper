@@ -29,7 +29,7 @@ button{border:0;border-radius:9px;padding:14px 20px;background:var(--orange);col
 <div id="game"></div>
 <div class="hud">
  <div class="top">
-  <div class="brand"><strong>SHOT<span style="color:#ff8a3d">HOT</span>PAPER</strong><span>TEST ARENA // BUILD 0.2</span></div>
+  <div class="brand"><strong>SHOT<span style="color:#ff8a3d">HOT</span>PAPER</strong><span>TEST ARENA // BUILD 0.3</span></div>
   <div class="stats">
    <div class="panel stat"><small>ÉLIMINATIONS</small><b id="score">00</b></div>
    <div class="panel stat"><small>MUNITIONS</small><b id="ammo">12 / 12</b></div>
@@ -37,7 +37,7 @@ button{border:0;border-radius:9px;padding:14px 20px;background:var(--orange);col
  </div>
  <div class="bottom">
   <div class="panel health"><label>INTÉGRITÉ DU PAPIER <b id="hpText" style="float:right;color:#f4ead7">100%</b></label><div class="bar"><i id="hpBar"></i></div></div><div class="panel ammoPanel"><label>CHARGEUR <b id="ammoText" style="float:right;color:#f4ead7">12 / 12</b></label><div class="ammoSlots" id="ammoSlots"></div></div><div class="panel ammoPanel"><label>CHARGEUR <b id="ammoText" style="float:right;color:#f4ead7">12 / 12</b></label><div class="ammoSlots" id="ammoSlots"></div></div>
-  <div class="panel hint"><kbd>ZQSD</kbd> / <kbd>WASD</kbd> bouger &nbsp; <kbd>CLIC</kbd> tirer &nbsp; <kbd>R</kbd> recharger</div>
+  <div class="panel hint"><kbd>ZQSD</kbd> / <kbd>WASD</kbd> bouger &nbsp; <kbd>CLIC</kbd> tirer &nbsp; <kbd>R</kbd> recharger &nbsp; <kbd>ESPACE</kbd> sauter</div>
  </div>
 </div>
 <div id="toast"></div>
@@ -95,7 +95,7 @@ function boxIn(parent,x,y,z,w,h,d,material){const m=new THREE.Mesh(new THREE.Box
 const player=makeFighter(blue,0,12,true);player.group.scale.setScalar(1.08);
 const bots=[];const spots=[[-11,-10],[10,-12],[13,10],[-13,12],[2,-15],[-3,3],[14,-3]];
 for(const [x,z] of spots){const b=makeFighter(red,x,z);b.knockback=new THREE.Vector3();b.hitFlash=0;bots.push(b)}
-const keys={};let active=false,hp=100,score=0,ammo=12,reload=false,lastShot=0,damageClock=0,recoil=0;const playerVelocity=new THREE.Vector3();const playerVelocity=new THREE.Vector3();let recoil=0;
+const keys={};let active=false,hp=100,score=0,ammo=12,reload=false,lastShot=0,damageClock=0,recoil=0,verticalVelocity=0;const playerVelocity=new THREE.Vector3();const playerVelocity=new THREE.Vector3();let recoil=0;
 const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),clock=new THREE.Clock();
 const toast=document.querySelector('#toast');let toastTimer;
 function say(t){toast.textContent=t;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),1100)}
@@ -124,12 +124,12 @@ function shoot(){
  lastShot=performance.now();ammo--;updateHud();recoil=.28;
  raycaster.setFromCamera(pointer,camera);const ground=new THREE.Plane(new THREE.Vector3(0,1,0),0),aim=new THREE.Vector3();raycaster.ray.intersectPlane(ground,aim);
  const origin=player.group.position.clone().add(new THREE.Vector3(0,1.18,0)),direction=aim.clone().sub(origin).normalize();
- const targets=[];for(const b of bots)if(b.alive)targets.push(b.body,b.headPivot);
+ const targets=[];for(const b of bots)if(b.alive)targets.push(b.body,...b.headPivot.children);
  raycaster.set(origin,direction);raycaster.far=34;
  const hit=raycaster.intersectObjects([...targets,...scene.children.filter(o=>o.isMesh&&o.geometry.type==="BoxGeometry"&&o.position.y>.3)],false);
  const end=hit.length?hit[0].point:origin.clone().add(direction.clone().multiplyScalar(34));spawnShot(origin,end);
  if(hit.length){
-  const target=bots.find(b=>b.alive&&(hit[0].object===b.body||hit[0].object===b.headPivot||b.headPivot.children.includes(hit[0].object)));
+  const target=bots.find(b=>b.alive&&(hit[0].object===b.body||b.headPivot.children.includes(hit[0].object)));
   if(target){target.hp-=50;target.knockback.add(direction.clone().multiplyScalar(4.5));target.hitFlash=.13;say(target.hp<=0?"CIBLE ÉLIMINÉE +1":"TOUCHÉ !");
    if(target.hp<=0){target.alive=false;score++;updateHud();target.group.rotation.z=.35;setTimeout(()=>{scene.remove(target.group);respawn(target)},1800)}
   }else say("IMPACT CARTON");
@@ -145,14 +145,14 @@ function update(dt){
  const elapsed=clock.elapsedTime;
  if(active){
   const p=player.group.position;let dx=0,dz=0;
-  if(keys.w||keys.z||keys.arrowup)dz-=1;if(keys.s||keys.arrowdown)dz+=1;if(keys.a||keys.q||keys.arrowleft)dx-=1;if(keys.d||keys.arrowright)dx+=1;
+  if(keys.w||keys.z||keys.arrowup)dz-=1;if(keys.s||keys.arrowdown)dz+=1;if(keys.a||keys.q||keys.arrowleft)dx-=1;if(keys.d||keys.arrowright)dx+=1;if(keys[" "]&&player.group.position.y<=.001)verticalVelocity=6.2;
   const len=Math.hypot(dx,dz)||1,desiredX=dx/len*7,desiredZ=dz/len*7;
   playerVelocity.x=THREE.MathUtils.damp(playerVelocity.x,desiredX,dx?13:8,dt);playerVelocity.z=THREE.MathUtils.damp(playerVelocity.z,desiredZ,dz?13:8,dt);
   const nx=p.x+playerVelocity.x*dt,nz=p.z+playerVelocity.z*dt;let blockX=false,blockZ=false;
   for(const o of obstacles){if(Math.abs(nx-o.x)<o.w/2+.5&&Math.abs(p.z-o.z)<o.d/2+.5)blockX=true;if(Math.abs(p.x-o.x)<o.w/2+.5&&Math.abs(nz-o.z)<o.d/2+.5)blockZ=true}
   if(!blockX)p.x=nx;else playerVelocity.x=0;if(!blockZ)p.z=nz;else playerVelocity.z=0;
   p.x=THREE.MathUtils.clamp(p.x,-20.5,20.5);p.z=THREE.MathUtils.clamp(p.z,-20.5,20.5);
-  const moving=Math.hypot(playerVelocity.x,playerVelocity.z)>.35;player.walk+=dt*(moving?11:3);p.y=moving?Math.abs(Math.sin(player.walk))*.055:0;
+  verticalVelocity-=18*dt;p.y=Math.max(0,p.y+verticalVelocity*dt);if(p.y===0)verticalVelocity=0;const moving=Math.hypot(playerVelocity.x,playerVelocity.z)>.35;player.walk+=dt*(moving?11:3);
   for(const limb of player.limbs)limb.mesh.rotation.x=limb.kind==="leg"?(moving?Math.sin(player.walk+limb.phase)*.62:0):(moving?Math.sin(player.walk+limb.phase)*.17:0);
   player.headPivot.rotation.x=Math.sin(elapsed*1.5)*.025;player.group.rotation.z=THREE.MathUtils.damp(player.group.rotation.z,-playerVelocity.x*.022,8,dt);
   player.gun.rotation.x=THREE.MathUtils.damp(player.gun.rotation.x,recoil,18,dt);recoil=THREE.MathUtils.damp(recoil,0,12,dt);
