@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ShotHotPaper — Prototype</title>
+<meta name="description" content="Prototype jouable de ShotHotPaper, le shooter dans un univers de papier et de carton.">
+<style>
+:root{color-scheme:dark;--ink:#f4ead7;--muted:#b9ad98;--orange:#ff8a3d;--paper:#e7d8b8}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#171b20;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink)}
+#game{position:fixed;inset:0}canvas{display:block}
+.hud{position:fixed;inset:0;pointer-events:none;padding:22px;display:flex;flex-direction:column;justify-content:space-between}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.brand,.panel{background:rgba(19,23,27,.78);border:1px solid rgba(255,255,255,.13);backdrop-filter:blur(12px);box-shadow:0 12px 35px #0005}
+.brand{padding:12px 16px;border-radius:12px}.brand strong{display:block;letter-spacing:.16em;font-size:13px}.brand span{font-size:10px;color:var(--muted);letter-spacing:.22em}
+.stats{display:flex;gap:9px}.stat{min-width:90px;padding:10px 13px;border-radius:10px;text-align:right}.stat small{display:block;color:var(--muted);font-size:9px;letter-spacing:.16em}.stat b{font-size:20px}
+.bottom{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}.health{width:220px;padding:12px 14px;border-radius:11px}.health label{font-size:10px;color:var(--muted);letter-spacing:.18em}.bar{height:7px;background:#ffffff20;border-radius:8px;margin-top:8px;overflow:hidden}.bar i{display:block;width:100%;height:100%;background:linear-gradient(90deg,#70c58d,#c8df87);transition:width .2s}
+.hint{padding:10px 13px;border-radius:10px;color:var(--muted);font-size:11px}.hint kbd{color:var(--ink);background:#ffffff16;border:1px solid #ffffff24;border-radius:4px;padding:2px 5px}
+#toast{position:fixed;top:22%;left:50%;transform:translate(-50%,-10px);opacity:0;color:#fff;background:#20272ddd;border:1px solid #ffffff25;padding:10px 18px;border-radius:9px;transition:.2s;pointer-events:none;font-size:12px;letter-spacing:.12em}#toast.show{opacity:1;transform:translate(-50%,0)}
+#overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(120deg,#111820dd,#171b20bb);padding:20px}
+.modal{width:min(520px,100%);padding:34px;border:1px solid #ffffff24;border-radius:18px;background:linear-gradient(145deg,#293039f2,#171d24f5);box-shadow:0 30px 90px #0009}
+.eyebrow{font-size:10px;letter-spacing:.3em;color:var(--orange);font-weight:800}.modal h1{font-size:clamp(34px,8vw,58px);line-height:.95;letter-spacing:-.06em;margin:14px 0}.modal h1 span{color:var(--orange)}.modal p{color:#c5bdaf;line-height:1.6;font-size:14px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:22px 0}.controls div{background:#ffffff0c;border:1px solid #ffffff14;border-radius:9px;padding:10px;font-size:11px;color:#cfc6b6}.controls b{color:white;display:block;margin-bottom:4px}
+button{border:0;border-radius:9px;padding:14px 20px;background:var(--orange);color:#211811;font-weight:900;letter-spacing:.08em;cursor:pointer;width:100%;font-size:12px}button:hover{filter:brightness(1.1)}.foot{font-size:10px!important;color:#817f7a!important;margin-bottom:0!important}
+@media(max-width:600px){.hud{padding:12px}.stat{min-width:65px;padding:8px}.stat b{font-size:16px}.brand{padding:9px 11px}.bottom{align-items:stretch;flex-direction:column}.health{width:100%}.hint{display:none}.modal{padding:24px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div class="hud">
+ <div class="top">
+  <div class="brand"><strong>SHOT<span style="color:#ff8a3d">HOT</span>PAPER</strong><span>TEST ARENA // BUILD 0.1</span></div>
+  <div class="stats">
+   <div class="panel stat"><small>ÉLIMINATIONS</small><b id="score">00</b></div>
+   <div class="panel stat"><small>MUNITIONS</small><b id="ammo">12 / ∞</b></div>
+  </div>
+ </div>
+ <div class="bottom">
+  <div class="panel health"><label>INTÉGRITÉ DU PAPIER <b id="hpText" style="float:right;color:#f4ead7">100%</b></label><div class="bar"><i id="hpBar"></i></div></div>
+  <div class="panel hint"><kbd>ZQSD</kbd> / <kbd>WASD</kbd> bouger &nbsp; <kbd>CLIC</kbd> tirer &nbsp; <kbd>R</kbd> recharger</div>
+ </div>
+</div>
+<div id="toast"></div>
+<div id="overlay"><div class="modal">
+ <div class="eyebrow">UNIVERS PAPIER · PROTOTYPE JOUABLE</div>
+ <h1>FAIS DU<br><span>PAPIER</span><br>UNE ARME.</h1>
+ <p>Bienvenue dans la première arène de ShotHotPaper. Affronte les cibles en carton, teste tes déplacements et découvre les sensations du tir.</p>
+ <div class="controls">
+  <div><b>⌨ Déplacement</b>ZQSD ou WASD</div>
+  <div><b>🖱 Viser & tirer</b>Pointeur + clic gauche</div>
+  <div><b>↻ Recharger</b>Touche R</div>
+  <div><b>🎯 Objectif</b>Éliminer les mannequins</div>
+ </div>
+ <button id="start">ENTRER DANS L'ARÈNE</button>
+ <p class="foot">Prototype local · Aucun compte, achat ou téléchargement requis pour jouer après mise en ligne.</p>
+</div></div>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+const root=document.querySelector('#game');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x9a9a8b);scene.fog=new THREE.Fog(0x9a9a8b,24,58);
+const camera=new THREE.PerspectiveCamera(48,innerWidth/innerHeight,.1,100);camera.position.set(0,17,17);camera.lookAt(0,0,0);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;root.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xf6e8ce,0x5b5146,2.1));
+const sun=new THREE.DirectionalLight(0xffedcf,2.5);sun.position.set(-8,18,9);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.camera.left=-22;sun.shadow.camera.right=22;sun.shadow.camera.top=22;sun.shadow.camera.bottom=-22;scene.add(sun);
+function mat(color,rough=.9){return new THREE.MeshStandardMaterial({color,roughness:rough})}
+const floorMat=mat(0xb8a98c),ink=mat(0x45413b),paper=mat(0xe9dfc9),blue=mat(0x4f91a7),red=mat(0xb85d45),dark=mat(0x292c2d),tape=mat(0xd5b96e);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(44,44),floorMat);floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+const grid=new THREE.GridHelper(44,44,0x786e5d,0x9b8f79);grid.position.y=.012;scene.add(grid);
+function box(x,y,z,w,h,d,material,rot=0){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);m.rotation.y=rot;m.castShadow=true;m.receiveShadow=true;scene.add(m);return m}
+function makeCover(x,z,w,d,h){box(x,h/2,z,w,h,d,mat(0x987b56),Math.random()*.04);for(let i=-1;i<=1;i++)box(x+i*w*.27,h+.012,z,w*.035,.025,d+.02,tape)}
+// arena borders
+for(let i=-22;i<=22;i+=4){box(i,1,-22,3.8,2,.45,mat(0x8d7658));box(i,1,22,3.8,2,.45,mat(0x8d7658));box(-22,1,i,.45,2,3.8,mat(0x8d7658));box(22,1,i,.45,2,3.8,mat(0x8d7658))}
+makeCover(-7,-5,4,1.1,1.5);makeCover(6,-7,1.2,4,1.6);makeCover(-9,7,1.2,4,1.5);makeCover(8,7,4,1.2,1.4);makeCover(0,-11,5,1,1.1);makeCover(0,8,4,1,1.2);makeCover(12,0,1,4,1.3);makeCover(-13,-1,1,4,1.3);
+function makeFighter(color,x,z,isPlayer=false){
+ const g=new THREE.Group();scene.add(g);g.position.set(x,0,z);
+ const body=new THREE.Mesh(new THREE.BoxGeometry(.72,1.15,.38),color);body.position.y=.92;body.castShadow=true;g.add(body);
+ const head=new THREE.Mesh(new THREE.BoxGeometry(.58,.58,.55),paper);head.position.y=1.78;head.castShadow=true;g.add(head);
+ const fold=new THREE.Mesh(new THREE.ConeGeometry(.42,.38,4),color);fold.position.set(0,2.12,0);fold.rotation.y=Math.PI/4;g.add(fold);
+ const visor=new THREE.Mesh(new THREE.BoxGeometry(.4,.09,.04),dark);visor.position.set(0,1.82,.29);g.add(visor);
+ const armGeo=new THREE.BoxGeometry(.2,.78,.22);
+ for(const s of [-1,1]){const a=new THREE.Mesh(armGeo,color);a.position.set(s*.49,.95,.02);a.rotation.z=s*.12;g.add(a);const leg=new THREE.Mesh(new THREE.BoxGeometry(.25,.58,.28),dark);leg.position.set(s*.2,.29,0);g.add(leg)}
+ const gun=boxIn(g,.12,1.15,.48,.16,.18,.85,dark);return {group:g,gun,hp:100,alive:true,isPlayer};
+}
+function boxIn(parent,x,y,z,w,h,d,material){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),material);m.position.set(x,y,z);parent.add(m);return m}
+const player=makeFighter(blue,0,12,true);player.group.scale.setScalar(1.08);
+const bots=[];const spots=[[-11,-10],[10,-12],[13,10],[-13,12],[2,-15],[-3,3],[14,-3]];
+for(const [x,z] of spots)bots.push(makeFighter(red,x,z));
+const keys={};let active=false,hp=100,score=0,ammo=12,reload=false,lastShot=0,damageClock=0;
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2(),clock=new THREE.Clock();
+const toast=document.querySelector('#toast');let toastTimer;
+function say(t){toast.textContent=t;toast.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),1100)}
+function updateHud(){document.querySelector('#score').textContent=String(score).padStart(2,'0');document.querySelector('#ammo').textContent=ammo+' / ∞';document.querySelector('#hpText').textContent=hp+'%';document.querySelector('#hpBar').style.width=hp+'%'}
+function reloadGun(){if(reload||ammo===12)return;reload=true;say('RECHARGEMENT…');setTimeout(()=>{ammo=12;reload=false;updateHud()},850)}
+function shoot(){if(!active||reload||performance.now()-lastShot<230)return;if(ammo<=0){reloadGun();return}lastShot=performance.now();ammo--;updateHud();raycaster.setFromCamera(pointer,camera);const candidates=[];for(const b of bots)if(b.alive)candidates.push(b.group.children[0],b.group.children[1]);const hits=raycaster.intersectObjects(candidates,false);if(hits.length){const bot=bots.find(b=>b.group.children.includes(hits[0].object));if(bot){bot.hp-=50;bot.group.scale.set(.92,1,.92);setTimeout(()=>{if(bot.alive)bot.group.scale.set(1,1,1)},90);if(bot.hp<=0){bot.alive=false;scene.remove(bot.group);score++;updateHud();say('CIBLE ÉLIMINÉE +1');setTimeout(()=>respawn(bot),1800)}else say('TOUCHÉ !')}}else say('TIR !')}
+function respawn(bot){const x=(Math.random()-.5)*30,z=(Math.random()-.5)*30;if(Math.hypot(x-player.group.position.x,z-player.group.position.z)<9){respawn(bot);return}bot.hp=100;bot.alive=true;bot.group.position.set(x,0,z);scene.add(bot.group)}
+function onPointer(e){pointer.x=e.clientX/innerWidth*2-1;pointer.y=-(e.clientY/innerHeight)*2+1}
+addEventListener('pointermove',onPointer);addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='r')reloadGun()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.button===0)shoot()});
+document.querySelector('#start').addEventListener('click',()=>{active=true;document.querySelector('#overlay').style.display='none';say('BONNE CHASSE !')});
+function update(dt){
+ if(active){
+  const p=player.group.position;let dx=0,dz=0;
+  if(keys.w||keys.z)dz-=1;if(keys.s)dz+=1;if(keys.a||keys.q)dx-=1;if(keys.d)dx+=1;
+  const len=Math.hypot(dx,dz)||1;p.x+=dx/len*6*dt;p.z+=dz/len*6*dt;p.x=THREE.MathUtils.clamp(p.x,-20,20);p.z=THREE.MathUtils.clamp(p.z,-20,20);
+  // Face the cursor's point on the arena floor.
+  raycaster.setFromCamera(pointer,camera);const plane=new THREE.Plane(new THREE.Vector3(0,1,0),0),target=new THREE.Vector3();if(raycaster.ray.intersectPlane(plane,target))player.group.rotation.y=Math.atan2(target.x-p.x,target.z-p.z);
+  for(const b of bots)if(b.alive){const v=b.group.position,dist=Math.hypot(p.x-v.x,p.z-v.z);if(dist<12){const a=Math.atan2(p.x-v.x,p.z-v.z);b.group.rotation.y=a;if(dist>4){v.x+=Math.sin(a)*1.1*dt;v.z+=Math.cos(a)*1.1*dt}if(dist<8&&performance.now()-b.lastAttack>1800){b.lastAttack=performance.now();if(Math.random()>.35){hp=Math.max(0,hp-8);updateHud();say('IMPACT ! -8%');if(hp===0){active=false;document.querySelector('#overlay').style.display='grid';document.querySelector('.modal h1').innerHTML='FEUILLE<br><span>FROISSÉE</span>';document.querySelector('.modal p').textContent='La partie est terminée. Relance une partie pour retenter ta chance.';document.querySelector('#start').textContent='RECOMMENCER';document.querySelector('#start').onclick=()=>location.reload()}}}}}
+ }
+ const p=player.group.position;camera.position.x=THREE.MathUtils.lerp(camera.position.x,p.x*.45,.04);camera.position.z=THREE.MathUtils.lerp(camera.position.z,p.z+17,.04);camera.lookAt(p.x,0,p.z);
+}
+function animate(){requestAnimationFrame(animate);const dt=Math.min(clock.getDelta(),.04);update(dt);renderer.render(scene,camera)}
+animate();addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+updateHud();
+</script>
+</body>
+</html>
