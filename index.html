@@ -146,9 +146,9 @@ function shoot(){
  const origin=player.group.position.clone().add(new THREE.Vector3(0,1.18,0)),direction=aim.clone().sub(origin).normalize();
  const targets=bots.filter(b=>b.alive&&b.hitbox).map(b=>b.hitbox);
  const blockers=scene.children.filter(o=>o.isMesh&&o.geometry.type==="BoxGeometry"&&o.position.y>.3);
- raycaster.set(origin,direction);raycaster.far=34;
+ raycaster.set(origin,direction);raycaster.far=Infinity;
  const hit=raycaster.intersectObjects([...targets,...blockers],true);
- const end=hit.length?hit[0].point:origin.clone().add(direction.clone().multiplyScalar(34));spawnShot(origin,end);
+ const end=hit.length?hit[0].point:origin.clone().add(direction.clone().multiplyScalar(100));spawnShot(origin,end);
  if(hit.length){
   const target=hit[0].object.userData.bot||null;
   if(target&&target.alive){target.hp=Math.max(0,target.hp-50);updateEnemyHealthBar(target);target.knockback.add(direction.clone().multiplyScalar(4.5));target.hitFlash=.13;say(target.hp<=0?"CIBLE ÉLIMINÉE +1":`TOUCHÉ ! ${target.hp}%`);
