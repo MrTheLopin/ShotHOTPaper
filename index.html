@@ -138,9 +138,10 @@ function shoot(){
 }
 function respawn(bot){const x=(Math.random()-.5)*30,z=(Math.random()-.5)*30;if(Math.hypot(x-player.group.position.x,z-player.group.position.z)<9){respawn(bot);return}bot.hp=100;bot.alive=true;bot.group.position.set(x,0,z);bot.group.rotation.set(0,0,0);bot.group.scale.set(1,1,1);bot.knockback.set(0,0,0);scene.add(bot.group)}
 function onPointer(e){pointer.x=e.clientX/innerWidth*2-1;pointer.y=-(e.clientY/innerHeight)*2+1}
-addEventListener('pointermove',onPointer);addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='r')reloadGun()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);\naddEventListener('keydown',e=>{if(e.key==='Escape'&&active){active=false;paused=true;document.querySelector('.modal h1').innerHTML='PAUSE<br><span>TACTIQUE</span>';document.querySelector('.modal p').textContent='La partie est en pause. Reprends quand tu es prêt.';document.querySelector('#start').textContent='REPRENDRE LA PARTIE';document.querySelector('#overlay').style.display='grid';}});
+addEventListener('pointermove',onPointer);addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key.toLowerCase()==='r')reloadGun()});addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
+addEventListener('keydown',e=>{if(e.key==='Escape'&&active){active=false;paused=true;document.querySelector('.modal h1').innerHTML='PAUSE<br><span>TACTIQUE</span>';document.querySelector('.modal p').textContent='La partie est en pause. Reprends quand tu es prêt.';document.querySelector('#start').textContent='REPRENDRE LA PARTIE';document.querySelector('#overlay').style.display='grid';}});
 renderer.domElement.addEventListener('pointerdown',e=>{if(e.button===0)shoot()});
-document.querySelector('#start').addEventListener('click',()=>{active=true;paused=false;pointer.set(0,0);document.querySelector('#overlay').style.display='none';say(paused?'REPRISE !':'BONNE CHASSE !')});
+document.querySelector('#start').addEventListener('click',()=>{const wasPaused=paused;active=true;paused=false;pointer.set(0,0);document.querySelector('#overlay').style.display='none';say(wasPaused?'REPRISE !':'BONNE CHASSE !')});
 function update(dt){
  for(const fx of [...projectiles,...flashes]){fx.life-=dt;fx.mesh.material.opacity=Math.max(0,fx.life/fx.max);if(fx.life<=0){scene.remove(fx.mesh);const arr=projectiles.includes(fx)?projectiles:flashes;arr.splice(arr.indexOf(fx),1)}}
  const elapsed=clock.elapsedTime;
